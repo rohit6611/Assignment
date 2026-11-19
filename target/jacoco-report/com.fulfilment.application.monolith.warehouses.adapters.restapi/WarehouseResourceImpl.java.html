@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WarehouseResourceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-code-assignment</a> &gt; <a href="index.source.html" class="el_package">com.fulfilment.application.monolith.warehouses.adapters.restapi</a> &gt; <span class="el_source">WarehouseResourceImpl.java</span></div><h1>WarehouseResourceImpl.java</h1><pre class="source lang-java linenums">package com.fulfilment.application.monolith.warehouses.adapters.restapi;
+
+import com.fulfilment.application.monolith.warehouses.adapters.database.WarehouseRepository;
+import com.fulfilment.application.monolith.warehouses.domain.ports.ArchiveWarehouseOperation;
+import com.fulfilment.application.monolith.warehouses.domain.ports.CreateWarehouseOperation;
+import com.fulfilment.application.monolith.warehouses.domain.ports.ReplaceWarehouseOperation;
+import com.warehouse.api.WarehouseResource;
+import com.warehouse.api.beans.Warehouse;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.WebApplicationException;
+import java.util.List;
+
+@RequestScoped
+<span class="fc" id="L17">public class WarehouseResourceImpl implements WarehouseResource {</span>
+
+  @Inject private WarehouseRepository warehouseRepository;
+
+  @Inject private CreateWarehouseOperation createWarehouseOperation;
+
+  @Inject private ReplaceWarehouseOperation replaceWarehouseOperation;
+
+  @Inject private ArchiveWarehouseOperation archiveWarehouseOperation;
+
+  @Override
+  public List&lt;Warehouse&gt; listAllWarehousesUnits() {
+<span class="fc" id="L29">    return warehouseRepository.getAll().stream().map(this::toWarehouseResponse).toList();</span>
+  }
+
+  @Override
+  @Transactional
+  public Warehouse createANewWarehouseUnit(@NotNull Warehouse data) {
+<span class="fc" id="L35">    var domainWarehouse = toDomainWarehouse(data);</span>
+
+    try {
+<span class="fc" id="L38">      createWarehouseOperation.create(domainWarehouse);</span>
+<span class="fc" id="L39">    } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L40">      throw new WebApplicationException(e.getMessage(), 400);</span>
+<span class="fc" id="L41">    }</span>
+
+<span class="fc" id="L43">    return toWarehouseResponse(domainWarehouse);</span>
+  }
+
+  @Override
+  public Warehouse getAWarehouseUnitByID(String id) {
+<span class="fc" id="L48">    var dbWarehouse = warehouseRepository.findById(Long.parseLong(id));</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">    if (dbWarehouse == null) {</span>
+<span class="fc" id="L50">      throw new WebApplicationException(&quot;Warehouse with id &quot; + id + &quot; not found&quot;, 404);</span>
+    }
+<span class="fc" id="L52">    return toWarehouseResponse(dbWarehouse.toWarehouse());</span>
+  }
+
+  @Override
+  @Transactional
+  public void archiveAWarehouseUnitByID(String id) {
+<span class="fc" id="L58">    var dbWarehouse = warehouseRepository.findById(Long.parseLong(id));</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">    if (dbWarehouse == null) {</span>
+<span class="fc" id="L60">      throw new WebApplicationException(&quot;Warehouse with id &quot; + id + &quot; not found&quot;, 404);</span>
+    }
+
+<span class="fc" id="L63">    var domainWarehouse = dbWarehouse.toWarehouse();</span>
+    try {
+<span class="fc" id="L65">      archiveWarehouseOperation.archive(domainWarehouse);</span>
+<span class="nc" id="L66">    } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L67">      throw new WebApplicationException(e.getMessage(), 400);</span>
+<span class="fc" id="L68">    }</span>
+<span class="fc" id="L69">  }</span>
+
+  @Override
+  @Transactional
+  public Warehouse replaceTheCurrentActiveWarehouse(
+      String businessUnitCode, @NotNull Warehouse data) {
+<span class="fc" id="L75">    var newWarehouse = toDomainWarehouse(data);</span>
+<span class="fc" id="L76">    newWarehouse.businessUnitCode = businessUnitCode;</span>
+
+    try {
+<span class="fc" id="L79">      replaceWarehouseOperation.replace(newWarehouse);</span>
+<span class="fc" id="L80">    } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L81">      throw new WebApplicationException(e.getMessage(), 400);</span>
+<span class="fc" id="L82">    }</span>
+
+<span class="fc" id="L84">    return toWarehouseResponse(newWarehouse);</span>
+  }
+
+  private Warehouse toWarehouseResponse(
+      com.fulfilment.application.monolith.warehouses.domain.models.Warehouse warehouse) {
+<span class="fc" id="L89">    var response = new Warehouse();</span>
+<span class="fc" id="L90">    response.setBusinessUnitCode(warehouse.businessUnitCode);</span>
+<span class="fc" id="L91">    response.setLocation(warehouse.location);</span>
+<span class="fc" id="L92">    response.setCapacity(warehouse.capacity);</span>
+<span class="fc" id="L93">    response.setStock(warehouse.stock);</span>
+
+<span class="fc" id="L95">    return response;</span>
+  }
+
+  private com.fulfilment.application.monolith.warehouses.domain.models.Warehouse toDomainWarehouse(
+      Warehouse apiWarehouse) {
+<span class="fc" id="L100">    var warehouse = new com.fulfilment.application.monolith.warehouses.domain.models.Warehouse();</span>
+<span class="fc" id="L101">    warehouse.businessUnitCode = apiWarehouse.getBusinessUnitCode();</span>
+<span class="fc" id="L102">    warehouse.location = apiWarehouse.getLocation();</span>
+<span class="fc" id="L103">    warehouse.capacity = apiWarehouse.getCapacity();</span>
+<span class="fc" id="L104">    warehouse.stock = apiWarehouse.getStock();</span>
+<span class="fc" id="L105">    return warehouse;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

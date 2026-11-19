@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LegacyStoreManagerGateway.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">java-code-assignment</a> &gt; <a href="index.source.html" class="el_package">com.fulfilment.application.monolith.stores</a> &gt; <span class="el_source">LegacyStoreManagerGateway.java</span></div><h1>LegacyStoreManagerGateway.java</h1><pre class="source lang-java linenums">package com.fulfilment.application.monolith.stores;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.TransactionPhase;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+@ApplicationScoped
+<span class="fc" id="L10">public class LegacyStoreManagerGateway {</span>
+
+  public void onStoreCreated(
+      @Observes(during = TransactionPhase.AFTER_SUCCESS) StoreCreatedEvent event) {
+<span class="fc" id="L14">    createStoreOnLegacySystem(event.store);</span>
+<span class="fc" id="L15">  }</span>
+
+  public void onStoreUpdated(
+      @Observes(during = TransactionPhase.AFTER_SUCCESS) StoreUpdatedEvent event) {
+<span class="fc" id="L19">    updateStoreOnLegacySystem(event.store);</span>
+<span class="fc" id="L20">  }</span>
+
+  public void createStoreOnLegacySystem(Store store) {
+<span class="fc" id="L23">    writeToFile(store);</span>
+<span class="fc" id="L24">  }</span>
+
+  public void updateStoreOnLegacySystem(Store store) {
+<span class="fc" id="L27">    writeToFile(store);</span>
+<span class="fc" id="L28">  }</span>
+
+  private void writeToFile(Store store) {
+    try {
+      Path tempFile;
+
+<span class="fc" id="L34">      tempFile = Files.createTempFile(store.name, &quot;.txt&quot;);</span>
+
+<span class="fc" id="L36">      System.out.println(&quot;Temporary file created at: &quot; + tempFile.toString());</span>
+
+<span class="fc" id="L38">      String content =</span>
+          &quot;Store created. [ name =&quot;
+              + store.name
+              + &quot; ] [ items on stock =&quot;
+              + store.quantityProductsInStock
+              + &quot;]&quot;;
+<span class="fc" id="L44">      Files.write(tempFile, content.getBytes());</span>
+<span class="fc" id="L45">      System.out.println(&quot;Data written to temporary file.&quot;);</span>
+
+<span class="fc" id="L47">      String readContent = new String(Files.readAllBytes(tempFile));</span>
+<span class="fc" id="L48">      System.out.println(&quot;Data read from temporary file: &quot; + readContent);</span>
+
+<span class="fc" id="L50">      Files.delete(tempFile);</span>
+<span class="fc" id="L51">      System.out.println(&quot;Temporary file deleted.&quot;);</span>
+
+<span class="nc" id="L53">    } catch (Exception e) {</span>
+<span class="nc" id="L54">      e.printStackTrace();</span>
+<span class="fc" id="L55">    }</span>
+<span class="fc" id="L56">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
